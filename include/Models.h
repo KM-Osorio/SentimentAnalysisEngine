@@ -21,13 +21,10 @@ typedef struct Product{
 
 typedef struct ProductNode {
     Product data;
-    ProductNode *next;
+    ProductNode *right;
+    ProductNode *left;
+    ProductNode():right(nullptr),left(nullptr){}
 }ProductNode;
-
-typedef struct ProductList {
-    ProductNode *head;
-    ProductNode *tail;
-}ProductList;
 
 // --- REVIEW MODULE ---
 typedef struct Review {

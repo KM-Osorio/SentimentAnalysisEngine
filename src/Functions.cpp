@@ -59,44 +59,40 @@ Word addNewWord(ifstream &in,string word) {
     return newWord;
 }
 
-void fillInDishList( ProductList &dishList) {
+void fillInDishList( ProductNode* &Menu) {
     ifstream in=input("../data/platos.csv");
-    setUpDishList(dishList);
-    char dishCode[7]{};
+    string dishCode;
     while(true) {
-        in.getline(dishCode,7,',');
+        dishCode=cinString(in,',');
         if (in.eof())break;
          ProductNode *newNode =addNewDish(in,dishCode);
-        if (dishList.head==nullptr)dishList.head=newNode;
-        else dishList.tail->next=newNode;
-        dishList.tail=newNode;
+        Menu=insertNewProduct(Menu,newNode);
     }
-
-}
-void setUpDishList(ProductList &dishList) {
-    dishList.head=nullptr;
-    dishList.tail=nullptr;
 }
 ProductNode *addNewDish(ifstream &in,string dishCode) {
     ProductNode *newNode =new ProductNode;
     newNode->data.code=dishCode;
     newNode->data.name=cinString(in,',');
     newNode->data.price=cinDouble(in);
-    newNode->next=nullptr;
     return newNode;
 }
-
-void  fillInOrderList( vector <Order>&orders,ProductList dishesList) {
+ProductNode* insertNewProduct(ProductNode*Menu,ProductNode*newDish) {
+    if (Menu==nullptr)return newDish;
+    if (newDish->data.code>Menu->data.code) Menu->right=insertNewProduct(Menu->right,newDish);
+    else Menu->left= insertNewProduct(Menu->left,newDish);
+    return Menu;
+}
+void  fillInOrderList( vector <Order>&orders,ProductNode*Menu) {
     ifstream in=input("../data/atenciones.txt");
     int orderCode;
     while (true) {
         in>>orderCode;
         if (in.eof())break;
-        orders.push_back(addNewOrder(in,orderCode,dishesList));
+        orders.push_back(addNewOrder(in,orderCode,Menu));
     }
 }
 
- Order addNewOrder(ifstream &in,int orderCode, ProductList dishesList) {
+ Order addNewOrder(ifstream &in,int orderCode,  ProductNode* Menu) {
     Order newOrder;
     newOrder.id=orderCode;
     newOrder.timestamp=cinTime(in);
@@ -105,7 +101,7 @@ void  fillInOrderList( vector <Order>&orders,ProductList dishesList) {
     string dishCode;
     while (in.peek()!='\n') {
         in>>dishCode>>cant;
-        struct ProductNode *dish=lookUpDish(dishesList,dishCode);
+        struct ProductNode *dish=lookUpDish(Menu,dishCode);
         newOrder.dishes.push_back(dish->data);
         newOrder.dishes[i].quantity=cant;
         newOrder.totalRevenue+=cant*dish->data.price;
@@ -120,13 +116,11 @@ int cinTime(ifstream &in) {
     in>>h>>c>>m;
     return h*60+m;
 }
-ProductNode *lookUpDish( ProductList dishesList,string dishCode) {
-    ProductNode *trail=dishesList.head;
-    while (true) {
-        if (trail->data.code==dishCode)return trail;
-        trail=trail->next;
-    }
-    return nullptr;
+ProductNode *lookUpDish( ProductNode* Menu,string dishCode) {
+    if (Menu==nullptr)return nullptr;
+    if (Menu->data.code==dishCode)return Menu;
+    if (Menu->data.code>dishCode) return lookUpDish(Menu->left,dishCode);
+    else return (lookUpDish(Menu->right,dishCode));
 }
 
 void fillInReviews( vector <Order>&orders,map<string,Word> &lexicon) {

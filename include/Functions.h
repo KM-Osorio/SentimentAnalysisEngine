@@ -17,14 +17,14 @@ string asing(char*chain);
 void fillInLexicon(map <string,Word>&lexicon);
 Word addNewWord(ifstream &in,string word);
 
-void fillInDishList(ProductList &dishList);
-void setUpDishList(ProductList &dishList);
+void fillInDishList( ProductNode* &Menu);
+ProductNode* insertNewProduct(ProductNode*Menu,ProductNode*newDish);
 ProductNode *addNewDish(ifstream &in,string dishCode);
 
-void  fillInOrderList( vector <Order>&orders,ProductList dishesList);
-Order addNewOrder(ifstream &in,int orderCode, ProductList dishesList);
+void  fillInOrderList( vector <Order>&orders, ProductNode* Menu);
+Order addNewOrder(ifstream &in,int orderCode,  ProductNode* Menu);
 int cinTime(ifstream &in);
- ProductNode *lookUpDish( ProductList dishesList,string dishCode);
+ ProductNode *lookUpDish( ProductNode* Menu,string dishCode);
 
 void fillInReviews( vector <Order>&orders,map<string,Word> &lexicon);
 Order* lookUpOrder( vector<Order>&orders,int orderCode);

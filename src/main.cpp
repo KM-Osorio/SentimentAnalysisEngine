@@ -3,12 +3,11 @@
 int main() {
     map <string,Word>lexicon;
     fillInLexicon(lexicon);
-    ProductList dishList;
-    fillInDishList(dishList);
+    ProductNode* Menu=nullptr;
+    fillInDishList(Menu);
     vector <Order>orders;
-    fillInOrderList(orders,dishList);
+    fillInOrderList(orders,Menu);
     fillInReviews(orders,lexicon);
     printReport(orders);
-
     return 0;
 }
