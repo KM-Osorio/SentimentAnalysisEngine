@@ -11,17 +11,6 @@ typedef struct Word {
     string text;
     int polarity;
 }Word;
-
-typedef struct WordNode {
-    Word word;
-    WordNode* next;
-}WordNode;
-
-typedef struct WordList {
-    WordNode* head;
-    WordNode* tail;
-}WordList;
-
 // --- PRODUCT MODULE ---
 typedef struct Product{
     string code;
@@ -58,14 +47,5 @@ typedef struct Order {
     vector <Review> reviews;
 }Order;
 
-typedef struct OrderNode {
-    Order order;
-    OrderNode *next;
-}OrderNode;
-
-typedef struct OrderList {
-    OrderNode *head;
-    OrderNode *tail;
-}OrderList;
 
 #endif //HI_MODEL_H

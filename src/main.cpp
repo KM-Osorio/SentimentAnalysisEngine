@@ -1,14 +1,14 @@
 #include "../include/Utils.h"
 
 int main() {
-    WordList lexicon;
+    map <string,Word>lexicon;
     fillInLexicon(lexicon);
     ProductList dishList;
     fillInDishList(dishList);
-    OrderList orderList;
-    fillInOrderList(orderList,dishList);
-    fillInReviews(orderList,lexicon);
-    printReport(orderList);
+    vector <Order>orders;
+    fillInOrderList(orders,dishList);
+    fillInReviews(orders,lexicon);
+    printReport(orders);
 
     return 0;
 }

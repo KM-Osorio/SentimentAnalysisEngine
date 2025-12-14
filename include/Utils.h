@@ -9,8 +9,9 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <map>
 using namespace std;
-
+#define noFound -1
 
 #include "Models.h"
 #include "Functions.h"

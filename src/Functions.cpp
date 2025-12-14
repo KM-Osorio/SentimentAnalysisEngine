@@ -43,33 +43,21 @@ string asing(char*chain) {
     return string (chain);
 }
 
-void fillInLexicon( WordList &lexicon) {
+void fillInLexicon( map<string,Word> &lexicon) {
     ifstream in=input("../data/lexicon.csv");
-    setUpWordList(lexicon);
-    char word[20]{};
+    string word;
     while(true) {
-        in.getline(word,20,',');
+        word=cinString(in,',');
         if (in.eof())break;
-        struct WordNode *newNode =addNewWord(in,word);
-        if (lexicon.head==nullptr)lexicon.head=newNode;
-        else lexicon.tail->next=newNode;
-        lexicon.tail=newNode;
+        lexicon[word]=addNewWord(in,word);
     }
-
-
 }
-void setUpWordList( WordList &lexicon) {
-    lexicon.head=nullptr;
-    lexicon.tail=nullptr;
+Word addNewWord(ifstream &in,string word) {
+    struct Word newWord;
+    newWord.text=word;
+    newWord.polarity=cinInt(in);
+    return newWord;
 }
-WordNode *addNewWord(ifstream &in,string word) {
-    struct WordNode *newNode =new struct WordNode;
-    newNode->word.text=word;
-    newNode->word.polarity=cinInt(in);
-    newNode->next=nullptr;
-    return newNode;
-}
-
 
 void fillInDishList( ProductList &dishList) {
     ifstream in=input("../data/platos.csv");
@@ -98,42 +86,33 @@ ProductNode *addNewDish(ifstream &in,string dishCode) {
     return newNode;
 }
 
-
-void  fillInOrderList( OrderList &orderList,ProductList dishesList) {
+void  fillInOrderList( vector <Order>&orders,ProductList dishesList) {
     ifstream in=input("../data/atenciones.txt");
-    setUpOrderList(orderList);
     int orderCode;
     while (true) {
         in>>orderCode;
         if (in.eof())break;
-        struct OrderNode *newNode =addNewOrder(in,orderCode,dishesList);
-        if (orderList.head==nullptr)orderList.head=newNode;
-        else orderList.tail->next=newNode;
-        orderList.tail=newNode;
+        orders.push_back(addNewOrder(in,orderCode,dishesList));
     }
 }
-void setUpOrderList( OrderList &orderList) {
-    orderList.head=nullptr;
-    orderList.tail=nullptr;
-}
- OrderNode *addNewOrder(ifstream &in,int orderCode, ProductList dishesList) {
-    struct OrderNode *newNode =new struct OrderNode;
-    newNode->order.id=orderCode;
-    newNode->order.timestamp=cinTime(in);
-    newNode->order.totalRevenue=0;
+
+ Order addNewOrder(ifstream &in,int orderCode, ProductList dishesList) {
+    Order newOrder;
+    newOrder.id=orderCode;
+    newOrder.timestamp=cinTime(in);
+    newOrder.totalRevenue=0;
     int cant,i=0;
     string dishCode;
     while (in.peek()!='\n') {
         in>>dishCode>>cant;
         struct ProductNode *dish=lookUpDish(dishesList,dishCode);
-        newNode->order.dishes.push_back(dish->data);
-        newNode->order.dishes[i].quantity=cant;
-        newNode->order.totalRevenue+=cant*dish->data.price;
+        newOrder.dishes.push_back(dish->data);
+        newOrder.dishes[i].quantity=cant;
+        newOrder.totalRevenue+=cant*dish->data.price;
         i++;
     }
-    newNode->order.dishCount=i;
-    newNode->next=nullptr;
-    return newNode;
+    newOrder.dishCount=i;
+    return newOrder;
 }
 int cinTime(ifstream &in) {
     int h,m;
@@ -150,7 +129,7 @@ ProductNode *lookUpDish( ProductList dishesList,string dishCode) {
     return nullptr;
 }
 
-void fillInReviews( OrderList &orderList,WordList lexicon) {
+void fillInReviews( vector <Order>&orders,map<string,Word> &lexicon) {
     ifstream in=input("../data/comentarios.csv");
     int orderCode;
     string rawReview;
@@ -158,11 +137,13 @@ void fillInReviews( OrderList &orderList,WordList lexicon) {
         orderCode=cinInt(in);
         if (in.eof())break;
         getline(in,rawReview,'\n');
-        struct OrderNode *order=lookUpOrder(orderList,orderCode);
-        order->order.reviews.push_back(addNewReview(rawReview,lexicon));
+        Order*ptr=lookUpOrder(orders,orderCode);
+        if (ptr!=nullptr){
+            ptr->reviews.push_back(addNewReview(rawReview,lexicon));
+        }
     }
 }
- Review addNewReview(string rawReview,WordList lexicon) {
+ Review addNewReview(string rawReview,map<string,Word> &lexicon) {
     Review newReview;
     newReview.rawText=rawReview;
     cleanRawText(rawReview);
@@ -171,10 +152,10 @@ void fillInReviews( OrderList &orderList,WordList lexicon) {
     int begin=0;
     while (rawReview[begin]) {
        string word=extractWord(begin,rawReview);
-        WordNode *node=findWordInLexicon(word,lexicon);
-        if (node!=nullptr) {
-            newReview.words.push_back(node->word);
-            newReview.totalPolarity+=node->word.polarity;
+        const Word*ptr=findWordInLexicon(word,lexicon);
+        if (ptr!=nullptr) {
+            newReview.words.push_back(*ptr);
+            newReview.totalPolarity+=ptr->polarity;
         }
     }
     return newReview;
@@ -189,21 +170,14 @@ string extractWord(int &begin,string rawReview) {
     begin++;
     return word;
 }
-WordNode *findWordInLexicon(string word,WordList lexicon) {
-    WordNode *trail=lexicon.head;
-    while (trail->next!=nullptr) {
-        if (trail->word.text==word) {
-            return trail;
-        }
-        trail=trail->next;
-    }
+const Word*findWordInLexicon(string word,map<string,Word> &lexicon) {
+    map<string,Word>::iterator it=lexicon.find(word);
+    if (it!=lexicon.end()) return &it->second;
     return nullptr;
 }
-OrderNode *lookUpOrder( OrderList &orderList,int orderCode) {
-    OrderNode *trail=orderList.head;
-    while (true) {
-        if (trail->order.id==orderCode)return trail;
-        trail=trail->next;
+Order* lookUpOrder(vector<Order>&orders,int orderCode) {
+    for (auto &order:orders) {
+        if (order.id==orderCode)return &order;
     }
     return nullptr;
 }
@@ -229,27 +203,28 @@ void deleteChar(int pos,string &rawReview,int max) {
         rawReview[i]=rawReview[i+1];
     }
 }
-void printReport( OrderList orderList) {
+void printReport( vector<Order>&orders) {
     ofstream out=output("outputFiles/SentimentAnalysisReport.txt");
-    OrderNode *order=orderList.head;
     double score=0;
     title(out);
-    while (order!=nullptr) {
-        reviewHeader(out,order->order);
+    for (const auto&order:orders) {
+        reviewHeader(out,order);
         int i=1;
-        for (const auto&dish: order->order.dishes) {
+        for (const auto&dish: order.dishes) {
             printDish(out,i,dish);
+            i++;
         }
-        out<<"Total Revenue: "<<order->order.totalRevenue<<endl;
+        out<<"Total Revenue: "<<order.totalRevenue<<endl;
         lines(out,130,'-');
         out<<"Costumer Reviews: "<<endl;
-        int k=1;
-        for (const auto& review:order->order.reviews) {
-            out<<" - "<<order->order.reviews[k].rawText<<endl;
-            score+=order->order.reviews[k].totalPolarity;
+        int k=0;
+        for (const auto& review:order.reviews) {
+            out<<" - "<<order.reviews[k].rawText<<endl;
+            score+=order.reviews[k].totalPolarity;
+            k++;
         }
         out<<"TotalSentiment Score: "<<score<<endl;
-        order=order->next;
+
     }
 }
 void reviewHeader(ofstream &out, Order order) {
