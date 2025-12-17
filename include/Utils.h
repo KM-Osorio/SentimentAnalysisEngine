@@ -10,10 +10,10 @@
 #include <string>
 #include <vector>
 #include <map>
-using namespace std;
+#include <sstream>
+
 #define noFound -1
 
 #include "Models.h"
-#include "Functions.h"
 
 #endif //HI_UTILS_H

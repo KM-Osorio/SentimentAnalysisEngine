@@ -2,6 +2,38 @@
 // Created by HP SUPPORT on 8/12/2025.
 //
 #include "../include/Utils.h"
+#include "../include/Functions.h"
+using namespace std;
+
+namespace SentimentLogic{
+    string cleanRawText(string rawReview){
+        string cleaned;
+        for (char c: rawReview) {
+            if (isalnum(c)or c==' ')cleaned.push_back(tolower(c));
+        }
+        return cleaned;
+    }
+    vector <string>splitIntoWords(string cleaned) {
+        vector <string>tokenList;
+        stringstream ss(cleaned);
+        string word;
+        while (ss>>word) tokenList.push_back(word);
+        return tokenList;
+    }
+
+    vector<Word>analyzeSentiment(vector <string>tokenList,int &totalPolarity,map<string,Word>lexicon) {
+        totalPolarity=0;
+        vector<Word>words;
+        for (auto& token:tokenList) {
+            const Word*ptr=findWordInLexicon(token,lexicon);
+            if (ptr!=nullptr) {
+                words.push_back(*ptr);
+                totalPolarity+=ptr->polarity;
+            }
+        }
+        return words;
+    }
+}
 void lines(ofstream &out,int n,char c) {
     for(int i=0;i<n;i++) out<<c;
     out<<endl;
@@ -34,10 +66,12 @@ double cinDouble(ifstream &in){
     in.get();
     return i;
 }
-string cinString(ifstream &in,char c) {
-    char chain[300];
-    in.getline(chain,300,c);
-    return string (chain);
+string cinString(ifstream &in,int n,char c) {
+    char chain[n]{};
+    string i;
+    in.getline(chain,n,c);
+    i=chain;
+    return i;
 }
 string asing(char*chain) {
     return string (chain);
@@ -46,16 +80,18 @@ string asing(char*chain) {
 void fillInLexicon( map<string,Word> &lexicon) {
     ifstream in=input("../data/lexicon.csv");
     string word;
+    int polarity;
     while(true) {
-        word=cinString(in,',');
+        word=cinString(in,20,',');
+        polarity=cinInt(in);
         if (in.eof())break;
-        lexicon[word]=addNewWord(in,word);
+        lexicon[word]=addNewWord(polarity,word);
     }
 }
-Word addNewWord(ifstream &in,string word) {
+Word addNewWord(int polarity,string word) {
     struct Word newWord;
     newWord.text=word;
-    newWord.polarity=cinInt(in);
+    newWord.polarity=polarity;
     return newWord;
 }
 
@@ -63,7 +99,7 @@ void fillInDishList( ProductNode* &Menu) {
     ifstream in=input("../data/platos.csv");
     string dishCode;
     while(true) {
-        dishCode=cinString(in,',');
+        dishCode=cinString(in,50,',');
         if (in.eof())break;
          ProductNode *newNode =addNewDish(in,dishCode);
         Menu=insertNewProduct(Menu,newNode);
@@ -72,7 +108,7 @@ void fillInDishList( ProductNode* &Menu) {
 ProductNode *addNewDish(ifstream &in,string dishCode) {
     ProductNode *newNode =new ProductNode;
     newNode->data.code=dishCode;
-    newNode->data.name=cinString(in,',');
+    newNode->data.name=cinString(in,100,',');
     newNode->data.price=cinDouble(in);
     return newNode;
 }
@@ -137,66 +173,33 @@ void fillInReviews( vector <Order>&orders,map<string,Word> &lexicon) {
         }
     }
 }
- Review addNewReview(string rawReview,map<string,Word> &lexicon) {
-    Review newReview;
-    newReview.rawText=rawReview;
-    cleanRawText(rawReview);
-    newReview.processedText=rawReview;
-    newReview.totalPolarity=0;
-    int begin=0;
-    while (rawReview[begin]) {
-       string word=extractWord(begin,rawReview);
-        const Word*ptr=findWordInLexicon(word,lexicon);
-        if (ptr!=nullptr) {
-            newReview.words.push_back(*ptr);
-            newReview.totalPolarity+=ptr->polarity;
-        }
-    }
-    return newReview;
-}
-string extractWord(int &begin,string rawReview) {
-    string word;
-    while(rawReview[begin]) {
-        if (rawReview[begin]==' ')break;
-        word.push_back(rawReview[begin]);
-        begin++;
-    }
-    begin++;
-    return word;
-}
-const Word*findWordInLexicon(string word,map<string,Word> &lexicon) {
-    map<string,Word>::iterator it=lexicon.find(word);
-    if (it!=lexicon.end()) return &it->second;
-    return nullptr;
-}
 Order* lookUpOrder(vector<Order>&orders,int orderCode) {
     for (auto &order:orders) {
         if (order.id==orderCode)return &order;
     }
     return nullptr;
 }
-void cleanRawText(string &rawReview) {
-    bool okChar;
-    for (int i=rawReview.length()-1;i>=0;i--) {
-        okChar=verifyChar(rawReview[i]);
-        if (okChar==false)deleteChar(i,rawReview,rawReview.length());
-    }
-    myMinus(rawReview);
+ Review addNewReview(string rawReview,map<string,Word> &lexicon) {
+    Review newReview;
+    newReview.rawText=rawReview;
+
+    string cleaned=SentimentLogic::cleanRawText(rawReview);
+    newReview.processedText=cleaned;
+
+    vector <string> tokenList=SentimentLogic::splitIntoWords(cleaned);
+    newReview.words=SentimentLogic::analyzeSentiment(tokenList,newReview.totalPolarity,lexicon);
+    return newReview;
 }
-void myMinus(string &rawReview) {
-    for (int i=0;rawReview[i];i++) {
-        if (rawReview[i]>='A' && rawReview[i]<='Z'&& rawReview[i]!=' ' ) rawReview[i]+=32;
-    }
+
+
+const Word*findWordInLexicon(string word,map<string,Word> &lexicon) {
+    map<string,Word>::iterator it=lexicon.find(word);
+    if (it!=lexicon.end()) return &it->second;
+    return nullptr;
 }
-bool verifyChar(char c) {
-    if ((c>='A' && c<='z') or (c==' '))return true;
-    return false;
-}
-void deleteChar(int pos,string &rawReview,int max) {
-    for (int i=pos;i<max;i++) {
-        rawReview[i]=rawReview[i+1];
-    }
-}
+
+
+
 void printReport( vector<Order>&orders) {
     ofstream out=output("outputFiles/SentimentAnalysisReport.txt");
     double score=0;

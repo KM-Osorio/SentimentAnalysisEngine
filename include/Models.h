@@ -8,13 +8,13 @@
 
 // --- SENTIMENT MODULE ---
 typedef struct Word {
-    string text;
+    std::string text;
     int polarity;
 }Word;
 // --- PRODUCT MODULE ---
 typedef struct Product{
-    string code;
-    string name;
+    std::string code;
+   std:: string name;
     double price;
     int quantity;
 }Product;
@@ -28,20 +28,20 @@ typedef struct ProductNode {
 
 // --- REVIEW MODULE ---
 typedef struct Review {
-    string rawText;
-    string processedText;
-    vector <Word> words;
+    std::string rawText;
+    std::string processedText;
+    std::vector <Word> words;
     int totalPolarity;
 }Review;
 
 // --- ORDER MODULE ---
 typedef struct Order {
     int id;
-    vector <Product> dishes;
+    std::vector <Product> dishes;
     int dishCount;
     double totalRevenue;
     int timestamp;
-    vector <Review> reviews;
+    std::vector <Review> reviews;
 }Order;
 
 
