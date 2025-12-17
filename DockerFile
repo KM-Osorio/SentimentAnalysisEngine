@@ -1,0 +1,18 @@
+# Use GCC (C++ compiler) as base image
+FROM gcc:latest
+
+# Install CMake (required to build the project)
+RUN apt-get update && apt-get install -y cmake
+
+# Set working directory inside the container
+WORKDIR /usr/src/app
+
+# Copy source code to the container
+COPY . .
+
+# Create build directory and compile
+WORKDIR /usr/src/app/cmake-build-debug
+RUN cmake .. && make
+
+# Default command to run the application
+CMD ["./SentimentAnalysisEngine"]
